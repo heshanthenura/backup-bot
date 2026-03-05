@@ -32,6 +32,9 @@ jobs:
                 GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
                 GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
               run: |
+                echo "$GDRIVE_TOKEN" > gdrive-key.json
+
                 TIMESTAMP=$(date +%Y_%m_%d_%H_%M)
                 BACKUP_FILE="backup_$TIMESTAMP.gz"
-                gdrive upload --parent $GDRIVE_FOLDER_ID $BACKUP_FILE
+                gdrive --service-account gdrive-key.json upload --parent $GDRIVE_FOLDER_ID $BACKUP_FILE
+                rm gdrive-key.json $BACKUP_FILE
