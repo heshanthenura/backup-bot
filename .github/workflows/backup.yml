@@ -17,6 +17,7 @@ jobs:
               uses: actions/checkout@v3
 
             - name: Create MongoDB Backup
+              id: mongo_backup
               env:
                 MONGO_URI: ${{ secrets.MONGO_URI }}
               run: |
@@ -24,11 +25,11 @@ jobs:
                 BACKUP_FILE="backup_$TIMESTAMP.gz"
                 mongodump --uri="$MONGO_URI" --archive="$BACKUP_FILE" --gzip
                 echo "Backup created: $BACKUP_FILE"
-                echo "backup_file=$BACKUP_FILE" >> $GITHUB_OUTPUT
+                echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_OUTPUT
 
             - name: Upload to Google Drive
               uses: willo32/google-drive-upload-action@v1
               with:
                 parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
-                target: ${{ steps.backup.outputs.backup_file }}
+                target: ${{ steps.mongo_backup.outputs.BACKUP_FILE }} 
                 credentials: ${{ secrets.GDRIVE_TOKEN }}
