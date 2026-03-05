@@ -32,8 +32,8 @@ jobs:
                 echo "Backup created: $BACKUP_FILE"
 
             - name: Upload to Google Drive
-              uses: gdrive-upload/action@v1
+              uses: willo32/google-drive-upload-action@v1
               with:
-                folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
-                file: backup_*.gz
-                token: ${{ secrets.GDRIVE_TOKEN }}
+                parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
+                target:: backup_*.gz
+                credentials: ${{ secrets.GDRIVE_TOKEN }}
