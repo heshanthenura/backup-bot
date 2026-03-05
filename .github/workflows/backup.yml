@@ -35,5 +35,5 @@ jobs:
               uses: willo32/google-drive-upload-action@v1
               with:
                 parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
-                target: backup_*.gz
+                target: ${{ steps.backup.outputs.backup_file }}
                 credentials: ${{ secrets.GDRIVE_TOKEN }}

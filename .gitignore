@@ -1,2 +1,4 @@
 .secrets
 bin/*
+encoded.txt
+my_service_account_key.json
