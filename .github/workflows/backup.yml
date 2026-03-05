@@ -2,7 +2,11 @@ name: MongoDB Snapshot Backup
 
 on:
     workflow_dispatch:
-      
+      inputs:
+        environment:
+          description: 'Choose environment'
+          required: true
+          default: 'production'
 
 jobs:
     backup:
