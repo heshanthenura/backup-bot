@@ -1,35 +1,33 @@
 name: MongoDB Snapshot Backup
 
 on:
-    workflow_dispatch:
-      inputs:
-        environment:
-          description: 'Choose environment'
-          required: true
-          default: 'production'
+  workflow_dispatch:
 
 jobs:
-    backup:
-        runs-on: ubuntu-latest
-        container: mongo:6.0
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
+  backup:
+    runs-on: ubuntu-latest
+    container: mongo:6.0
 
-            - name: Create MongoDB Backup
-              id: mongo_backup
-              env:
-                MONGO_URI: ${{ secrets.MONGO_URI }}
-              run: |
-                TIMESTAMP=$(date +%Y_%m_%d_%H_%M)
-                BACKUP_FILE="backup_$TIMESTAMP.gz"
-                mongodump --uri="$MONGO_URI" --archive="$BACKUP_FILE" --gzip
-                echo "Backup created: $BACKUP_FILE"
-                echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_OUTPUT
+    outputs:
+      zip_file: ${{ steps.create_backup.outputs.ZIP_FILE }}
 
-            - name: Upload to Google Drive
-              uses: willo32/google-drive-upload-action@v1
-              with:
-                parent_folder_id: ${{ secrets.GDRIVE_FOLDER_ID }}
-                target: ${{ steps.mongo_backup.outputs.BACKUP_FILE }} 
-                credentials: ${{ secrets.GDRIVE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install zip
+        run: apt-get update && apt-get install -y zip
+
+      - name: Create backup
+        id: create_backup
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: bash ./create_backup.sh
+
+      - name: Install Curl
+        run: apt-get update && apt-get install -y curl
+
+      - name: Upload backup
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          ZIP_FILE: ${{ steps.create_backup.outputs.ZIP_FILE }}
+        run: bash ./upload_backup.sh
