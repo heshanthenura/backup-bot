@@ -38,4 +38,6 @@ jobs:
           name: mongo-backup
 
       - name: test
-        run: echo "$ZIP_FILE"
+        env:
+          ZIP_FILE: ${{ steps.create_backup.outputs.ZIP_FILE }}
+        run: echo $ZIP_FILE
