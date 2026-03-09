@@ -4,42 +4,61 @@ on:
   workflow_dispatch:
 
 jobs:
-  backup:
+  generate-filename:
     runs-on: ubuntu-latest
-    container: mongo:6.0
     outputs:
-      zip_file: ${{ steps.create_backup.outputs.ZIP_FILE }}
+      filename: ${{ steps.generate_filename.outputs.filename }}
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Install zip
-        run: apt-get update && apt-get install -y zip
-      - name: Create backup
-        id: create_backup
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: bash ./create_backup.sh
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Generate Filename
+        id: generate_filename
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          FILENAME="mongodb_backup_$TIMESTAMP.gz"
+          echo "Generated filename: $FILENAME"
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+
+  backup:
+    needs: generate-filename
+    runs-on: ubuntu-latest
+    container: mongo:latest
+
+    steps:
+      - name: Backup MongoDB
+        run: |
+          mongodump \
+            --uri="${{ secrets.MONGO_URI }}" \
+            --archive=${{ needs.generate-filename.outputs.filename }} \
+            --gzip
+
+          echo "Backup completed: ${{ needs.generate-filename.outputs.filename }}"
+
+      - name: Upload Backup Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: mongo-backup
-          path: ${{ steps.create_backup.outputs.ZIP_FILE }}
+          name: mongodb-backup
+          path: ${{ needs.generate-filename.outputs.filename }}
 
   upload:
+    needs: generate-filename
     runs-on: ubuntu-latest
-    needs: backup
-
-    container:
-      image: python:3.11
+    container: python:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-      - name: Download backup
-        uses: actions/download-artifact@v4
+      - name: Download Backup Artifact
+        uses: actions/download-artifact@v3
         with:
-          name: mongo-backup
+          name: mongodb-backup
 
-      - name: test
+      - name: Install Python Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Upload to Dropbox
         env:
-          ZIP_FILE: ${{ steps.create_backup.outputs.zip_file }}
-        run: echo $ZIP_FILE
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: |
+          python upload_backup.py ${{ needs.generate-filename.outputs.filename }}
