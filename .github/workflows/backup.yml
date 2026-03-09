@@ -39,7 +39,7 @@ jobs:
           path: ${{ needs.generate-filename.outputs.filename }}
 
   upload:
-    needs: backup   
+    needs: [backup, generate-filename]   
     runs-on: ubuntu-latest
     container: python:latest
 
