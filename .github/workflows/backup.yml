@@ -30,7 +30,6 @@ jobs:
             --uri="${{ secrets.MONGO_URI }}" \
             --archive=${{ needs.generate-filename.outputs.filename }} \
             --gzip
-
           echo "Backup completed: ${{ needs.generate-filename.outputs.filename }}"
 
       - name: Upload Backup Artifact
@@ -40,7 +39,7 @@ jobs:
           path: ${{ needs.generate-filename.outputs.filename }}
 
   upload:
-    needs: generate-filename
+    needs: backup   
     runs-on: ubuntu-latest
     container: python:latest
 
@@ -52,13 +51,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mongodb-backup
+          path: backup-files   
 
       - name: Install Python Dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Upload to Dropbox
         env:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         run: |
-          python upload_backup.py ${{ needs.generate-filename.outputs.filename }}
+          python upload_backup.py backup-files/${{ needs.generate-filename.outputs.filename }}
